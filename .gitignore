@@ -1,0 +1,12 @@
+# Exclude target folder with build artifacts
+/target/
+/binaries/
+Cargo.lock
+
+# Exclude IDE specific files and folders
+.vscode/
+.idea/
+
+# Exclude OS specific files
+.DS_Store
+Thumbs.db

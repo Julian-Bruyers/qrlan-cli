@@ -1,0 +1,45 @@
+\documentclass[12pt,a4paper]{article}
+
+% -----------------------------------------------------------------------
+% Packages
+% -----------------------------------------------------------------------
+\usepackage[paperwidth=210mm,paperheight=297mm,margin=0mm]{geometry} % Use full A4 sheet
+\usepackage{graphicx}         % Include QR code graphic
+\usepackage{ragged2e}         % Improved centering (optional)
+
+% -----------------------------------------------------------------------
+% Parameters (will be overwritten by the Rust program)
+% -----------------------------------------------------------------------
+\newcommand{\qrtitle}{{{QRLAN_PDF_TITLE}}}      % Placeholder for the title text
+\newcommand{\qrcodefile}{{{QR_CODE_IMAGE_PATH}}}  % Placeholder for QR code image path
+
+% -----------------------------------------------------------------------
+% Layout logic
+% -----------------------------------------------------------------------
+% The \vspace*{\fill} commands are used to vertically center the block
+% containing the title and the QR code on the page.
+% The QR code width is fixed to 60% of the page width.
+
+\begin{document}
+\thispagestyle{empty}         % Suppress page number
+\centering                   % Center content horizontally
+
+% --- Vertical centering of the title and QR code block ---
+\vspace*{\fill}
+
+% --- Title ---
+{\LARGE\bfseries \qrtitle\par} % Display the title
+
+% --- Space between title and QR code (10% of QR code height) ---
+% Since the QR code has width=0.6\paperwidth and keepaspectratio is used,
+% its height for a square QR code is also 0.6\paperwidth.
+% 10% of this is 0.06\paperwidth.
+\vspace*{0.06\paperwidth}
+
+% --- QR code ---
+\includegraphics[width=0.6\paperwidth,keepaspectratio]{\qrcodefile} % Include the QR code image
+
+% --- Bottom space for vertical centering ---
+\vspace*{\fill}
+
+\end{document}

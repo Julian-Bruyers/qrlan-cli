@@ -1,0 +1,13 @@
+[package]
+name = "qrlan"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.4", features = ["derive"] }
+qrcode = { version = "0.12", features = ["image"] }
+image = "0.23"
+genpdf = { version = "0.2.0", features = ["images"] }
+dirs = "5.0"
+heck = "0.5"
+hex = "0.4"
