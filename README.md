@@ -1,4 +1,4 @@
-# qrlan - Wi-Fi QR Code Generator
+# qrlan - A command line tool wifi qr-code generator
 
 qrlan is a command-line tool that generates printable PDF files containing a QR code for easily connecting to a Wi-Fi network. It can retrieve known Wi-Fi networks from your system or allow you to enter network details manually.
 
@@ -7,7 +7,6 @@ qrlan is a command-line tool that generates printable PDF files containing a QR 
 *   Automatically lists known Wi-Fi networks on **macOS**. (Support for automatic network retrieval on Windows and Linux is planned).
 *   Prompts for manual input of SSID, password, and security type if needed.
 *   Generates a PDF file with a QR code and network details.
-*   Customizable output path and filename for the PDF.
 
 ## Platform Support
 
@@ -27,12 +26,6 @@ You can install `qrlan` on your system using the provided `install.sh` script. T
     ```bash
     curl -sSL https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.sh | sudo bash
     ```
-    This command downloads the script and executes it directly. The script will:
-    *   Detect your OS and architecture.
-    *   Download the appropriate `qrlan` binary from the latest GitHub release.
-    *   Attempt to install it to `/usr/local/bin` (may require `sudo` password).
-    *   If system-wide installation fails, it will try to install to `$HOME/.local/bin`.
-    *   If `$HOME/.local/bin` is not in your `PATH`, the script will provide instructions on how to add it.
 
 2.  **Verify installation:**
     Once installed, you should be able to run `qrlan` directly from your terminal:
@@ -101,22 +94,11 @@ You can specify an output directory or a full file path for the generated PDF:
 ## License
 
 This project, qrlan, is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
-
 You can find the full license text in the [LICENSE](LICENSE) file.
 
-**You are free to:**
-*   **Share** — copy and redistribute the material in any medium or format.
-*   **Adapt** — remix, transform, and build upon the material.
-
-**Under the following terms:**
-*   **Attribution** — You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use.
-*   **NonCommercial** — You may not use the material for commercial purposes.
 
 ### Third-Party Crate Licenses
 
-qrlan utilizes several third-party Rust crates. These crates are distributed under their own open-source licenses, which are generally permissive (e.g., MIT, Apache 2.0). The use of these crates is compatible with the non-commercial license of the qrlan project. You must still comply with the terms of these original licenses when using or distributing qrlan.
-
-The main dependencies and their typical licenses are:
 *   `clap`: MIT License or Apache License 2.0
 *   `qrcode`: MIT License
 *   `image`: MIT License
