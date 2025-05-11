@@ -25,7 +25,7 @@ You can install `qrlan` on your system using the provided `install.sh` script. T
 
 1.  **Download and run the installation script:**
     ```bash
-    sudo curl -sSL https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.sh | bash
+    curl -sSL https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.sh | sudo bash
     ```
     This command downloads the script and executes it directly. The script will:
     *   Detect your OS and architecture.
