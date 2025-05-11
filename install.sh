@@ -7,23 +7,35 @@
 
 set -e # Exit immediately if a command exits with a non-zero status.
 
+# Helper functions (defined first to be available for EFFECTIVE_HOME warning)
+print_warning() {
+    echo -e "\033[33mWARNING:\033[0m $1"
+}
+
+# Determine effective home directory, especially for macOS where $HOME might be misleading.
+EFFECTIVE_HOME="$HOME" # Default to $HOME
+if [ "$(uname -s)" = "Darwin" ]; then
+    CURRENT_USER=$(whoami)
+    if [ -d "/Users/$CURRENT_USER" ]; then
+        EFFECTIVE_HOME="/Users/$CURRENT_USER"
+    else
+        print_warning "Could not reliably determine user's home directory via /Users/$CURRENT_USER. Using default \$HOME ($HOME)."
+    fi
+fi
+
 # Configuration (PLEASE ADJUST)
 GITHUB_REPO="julian-bruyers/qrlan-cli" # Replace this with your GitHub username/repo
-INSTALL_DIR_SYSTEM="/usr/local/bin"
-INSTALL_DIR_USER="$HOME/.local/bin"
+INSTALL_DIR_SYSTEM="/bin" # Changed from /usr/local/bin
+INSTALL_DIR_USER="/usr/local/bin" # Use EFFECTIVE_HOME, changed from $EFFECTIVE_HOME/.local/bin
 EXE_NAME="qrlan"
 
-# Helper functions
+# Rest of helper functions
 print_info() {
     echo -e "\033[34mINFO:\033[0m $1"
 }
 
 print_success() {
     echo -e "\033[32mSUCCESS:\033[0m $1"
-}
-
-print_warning() {
-    echo -e "\033[33mWARNING:\033[0m $1"
 }
 
 print_error() {
@@ -95,43 +107,89 @@ fi
 chmod +x "$DOWNLOAD_PATH"
 print_info "$EXE_NAME has been made executable."
 
-# Determine installation location and install
-INSTALL_PATH=""
-if [ -w "$INSTALL_DIR_SYSTEM" ]; then
-    INSTALL_PATH="$INSTALL_DIR_SYSTEM/$EXE_NAME"
-    print_info "Attempting to install to $INSTALL_PATH (may require sudo)..."
-    if sudo mv "$DOWNLOAD_PATH" "$INSTALL_PATH"; then
-        print_success "$EXE_NAME successfully installed to $INSTALL_PATH."
-    else
-        print_error "Installation to $INSTALL_PATH failed. Attempting user installation."
-        INSTALL_PATH="" # Reset to attempt user installation
+# User-specific installation is the default
+print_info "Attempting to install $EXE_NAME to user directory: $INSTALL_DIR_USER"
+mkdir -p "$INSTALL_DIR_USER" # Ensure the directory exists
+
+INSTALL_PATH="$INSTALL_DIR_USER/$EXE_NAME"
+
+if mv "$DOWNLOAD_PATH" "$INSTALL_PATH"; then
+    print_success "$EXE_NAME successfully installed to $INSTALL_PATH."
+
+    # Attempt to automatically update shell configuration for PATH
+    SHELL_CONFIG_FILE=""
+    # Attempt to get shell, default to "unknown" if $SHELL is not set or basename fails
+    CURRENT_SHELL_BASENAME=$(basename "$SHELL" 2>/dev/null) || CURRENT_SHELL_BASENAME="unknown"
+
+    if [ "$CURRENT_SHELL_BASENAME" = "bash" ]; then
+        SHELL_CONFIG_FILE="$EFFECTIVE_HOME/.bashrc" # Use EFFECTIVE_HOME
+    elif [ "$CURRENT_SHELL_BASENAME" = "zsh" ]; then
+        SHELL_CONFIG_FILE="$EFFECTIVE_HOME/.zshrc" # Use EFFECTIVE_HOME
+    elif [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
+        SHELL_CONFIG_FILE="$EFFECTIVE_HOME/.config/fish/config.fish" # Use EFFECTIVE_HOME
+        # Ensure fish config directory exists for fish shell
+        if [ ! -d "$EFFECTIVE_HOME/.config/fish" ]; then # Use EFFECTIVE_HOME
+            mkdir -p "$EFFECTIVE_HOME/.config/fish" # Use EFFECTIVE_HOME
+        fi
     fi
-elif [ -d "$INSTALL_DIR_USER" ] && [[ ":$PATH:" == *":$INSTALL_DIR_USER:"* ]]; then
-    INSTALL_PATH="$INSTALL_DIR_USER/$EXE_NAME"
-    print_info "Installing to $INSTALL_PATH (user installation)."
-    if mv "$DOWNLOAD_PATH" "$INSTALL_PATH"; then
-        print_success "$EXE_NAME successfully installed to $INSTALL_PATH."
+
+    # Define the line to add for PATH modification
+    PATH_EXPORT_LINE="export PATH=\"$INSTALL_DIR_USER:\$PATH\"" # For bash/zsh
+    FISH_ADD_PATH_LINE="fish_add_path \"$INSTALL_DIR_USER\""    # For fish
+
+    if [ -n "$SHELL_CONFIG_FILE" ]; then
+        # Determine the correct line to add based on the shell
+        LINE_TO_ADD="$PATH_EXPORT_LINE"
+        if [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
+            LINE_TO_ADD="$FISH_ADD_PATH_LINE"
+        fi
+
+        # Create the shell config file if it doesn't exist
+        if [ ! -f "$SHELL_CONFIG_FILE" ]; then
+            print_info "Shell configuration file $SHELL_CONFIG_FILE not found. Creating it."
+            touch "$SHELL_CONFIG_FILE"
+        fi
+        
+        PATH_ALREADY_CONFIGURED=false
+        if [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
+            # Check if fish_add_path command for this directory exists (allowing for quotes)
+            if grep -q "fish_add_path.*[\"']\\{0,1\\}$INSTALL_DIR_USER[\"']\\{0,1\\}" "$SHELL_CONFIG_FILE"; then
+                PATH_ALREADY_CONFIGURED=true
+            fi
+        else # For bash/zsh
+            # Check if INSTALL_DIR_USER is part of an 'export PATH=' assignment
+            if grep -q "export PATH=.*$INSTALL_DIR_USER" "$SHELL_CONFIG_FILE"; then 
+                PATH_ALREADY_CONFIGURED=true
+            fi
+        fi
+
+        if ! $PATH_ALREADY_CONFIGURED; then
+            print_info "Adding $INSTALL_DIR_USER to PATH in $SHELL_CONFIG_FILE."
+            echo "" >> "$SHELL_CONFIG_FILE" # Add a newline for separation
+            echo "# Added by $EXE_NAME installer to include $INSTALL_DIR_USER in PATH" >> "$SHELL_CONFIG_FILE"
+            echo "$LINE_TO_ADD" >> "$SHELL_CONFIG_FILE"
+            print_success "$INSTALL_DIR_USER successfully added to PATH in $SHELL_CONFIG_FILE."
+            print_warning "Please run 'source $SHELL_CONFIG_FILE' or open a new terminal session for the $EXE_NAME command to be available."
+        else
+            print_info "$INSTALL_DIR_USER appears to be already configured in PATH in $SHELL_CONFIG_FILE."
+            print_warning "If $EXE_NAME is not found or you've just updated, please run 'source $SHELL_CONFIG_FILE' or open a new terminal session."
+        fi
     else
-        print_error "Installation to $INSTALL_PATH failed."
-        exit 1
+        # Fallback message if shell cannot be determined or is unsupported by this script's auto-config
+        print_warning "Could not automatically update your shell configuration for '$CURRENT_SHELL_BASENAME' shell."
+        print_warning "Please ensure that $INSTALL_DIR_USER is included in your PATH."
+        echo "You can do this by adding the following to your shell configuration file:"
+        # Provide specific instruction even if auto-update failed, based on detected shell if possible
+        if [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
+            echo "$FISH_ADD_PATH_LINE"
+        else # Default to bash/zsh style
+            echo "$PATH_EXPORT_LINE"
+        fi
+        echo "Then, restart your shell or source your configuration file."
     fi
 else
-    # Fallback: ask user or install to ~/.local/bin and provide a hint
-    mkdir -p "$INSTALL_DIR_USER"
-    INSTALL_PATH="$INSTALL_DIR_USER/$EXE_NAME"
-    print_warning "$INSTALL_DIR_SYSTEM is not writable and $INSTALL_DIR_USER is either not present or not in PATH."
-    print_info "Installing to $INSTALL_PATH."
-    if mv "$DOWNLOAD_PATH" "$INSTALL_PATH"; then
-        print_success "$EXE_NAME successfully installed to $INSTALL_PATH."
-        print_warning "Please ensure that $INSTALL_DIR_USER is included in your PATH."
-        echo "You can do this by adding the following to your shell configuration file (e.g., ~/.bashrc, ~/.zshrc):"
-        echo "export PATH=\"$INSTALL_DIR_USER:\$PATH\""
-        echo "Then, restart your shell or run 'source ~/.bashrc' (or the appropriate file)."
-    else
-        print_error "Installation to $INSTALL_PATH failed."
-        exit 1
-    fi
+    print_error "Installation to $INSTALL_PATH failed."
+    exit 1
 fi
 
-print_info "You can now use qrlan with the command '$EXE_NAME'."
 exit 0
