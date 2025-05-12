@@ -2,11 +2,31 @@
 
 qrlan is a command-line tool that generates printable PDF files containing a QR code for easily connecting to a Wi-Fi network. It can retrieve known Wi-Fi networks from your system or allow you to enter network details manually.
 
-## Features
+## Usage
 
-*   Automatically lists known Wi-Fi networks on **macOS**. (Support for automatic network retrieval on Windows and Linux is planned).
-*   Prompts for manual input of SSID, password, and security type if needed.
-*   Generates a PDF file with a QR code and network details.
+### Basic Usage
+To start the program and select from a list of known networks (or enter manually if none are found/selected):
+```bash
+qrlan
+```
+
+```bash
+qrlan --version
+```
+By default, the PDF file will be saved to your Desktop (e.g., `YourSSID_qrcode.pdf`). If you have installed the program globally or it's in your PATH, you can run it directly with `qrlan`.
+
+### Specifying Output Path
+You can specify an output directory or a full file path for the generated PDF:
+
+*   **Output to a specific directory (filename will be auto-generated):**
+    ```bash
+    qrlan /path/to/your/directory/
+    ```
+*   **Output to a specific file path:**
+    ```bash
+    qrlan /path/to/your/file.pdf
+    ```
+
 
 ## Platform Support
 
@@ -17,6 +37,17 @@ qrlan is a command-line tool that generates printable PDF files containing a QR 
 *   **Windows:** Automatic Wi-Fi network retrieval is supported. Installation is facilitated by the `install.ps1` PowerShell script.
 
 Manual input of network details to generate a QR code will work on any platform where the tool can be compiled and run, provided the LaTeX dependency is met.
+
+## Dependencies
+
+### Runtime Dependencies
+*   **LaTeX Distribution:** A working LaTeX installation with `pdflatex` is required to generate the PDF files.
+    *   **Windows:** MiKTeX (<https://miktex.org/download>)
+    *   **macOS:** MacTeX (<https://www.tug.org/mactex/mactex-download.html>)
+    *   **Linux (Debian/Ubuntu):** `sudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-lang-english`
+    *   **Linux (Fedora):** `sudo dnf install texlive-scheme-basic texlive-collection-fontsrecommended texlive-collection-langenglish` 
+
+    Ensure `pdflatex` is available in your system's PATH.
 
 ## Installation
 
@@ -49,22 +80,11 @@ For Windows, you can download and install the latest release of `qrlan` using a 
     irm https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.ps1 | iex
     ```
 
-    *   **Note on Execution Policy:** If you encounter an error related to script execution being disabled, you might need to adjust your PowerShell execution policy. You can allow script execution for the current user by running PowerShell as Administrator and executing:
-        ```powershell
-        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-        ```
-        Then, try the `irm | iex` command again.
-
-    *   **Troubleshooting Execution Policy Issues:**
-        *   If you still encounter an error related to script execution being disabled even after setting the policy to `RemoteSigned`, Windows might have blocked the downloaded script (if you downloaded `install.ps1` manually first instead of using `irm | iex` directly). To unblock it: Right-click `install.ps1` -> Properties -> General -> Click "Unblock" or "Zulassen" at the bottom, then Apply/OK. Then try running `.\install.ps1` again.
-        *   Alternatively, for a single execution, you can bypass the policy directly:
-            ```powershell
-            PowerShell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.ps1 | iex"
-            ```
-        *   Or, if you downloaded `install.ps1` manually:
-            ```powershell
-            PowerShell -ExecutionPolicy Bypass -File .\install.ps1
-            ```
+    **Note on Execution Policy:** If you encounter an error related to script execution being disabled, you might need to adjust your PowerShell execution policy. You can allow script execution for the current user by running PowerShell as Administrator and executing:
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+    ```
+    Then, try the `irm | iex` command again.
 
     The script will download the latest `qrlan-windows-amd64.exe` from GitHub, rename it to `qrlan.exe`, copy it to a user-specific programs directory (`%LOCALAPPDATA%\Programs\qrlan`), and add this directory to your user's PATH.
 
@@ -73,40 +93,6 @@ For Windows, you can download and install the latest release of `qrlan` using a 
     ```bash
     qrlan --version
     ```
-
-## Usage
-
-### Basic Usage
-To start the program and select from a list of known networks (or enter manually if none are found/selected):
-```bash
-./qrlan
-```
-By default, the PDF file will be saved to your Desktop (e.g., `YourSSID_qrcode.pdf`). If you have installed the program globally or it's in your PATH, you can run it directly with `qrlan`.
-
-### Specifying Output Path
-You can specify an output directory or a full file path for the generated PDF:
-
-*   **Output to a specific directory (filename will be auto-generated):**
-    ```bash
-    ./qrlan /path/to/your/directory/
-    ```
-*   **Output to a specific file path:**
-    ```bash
-    ./qrlan /path/to/your/file.pdf
-    ```
-
-## Dependencies
-
-### Runtime Dependencies
-*   **LaTeX Distribution:** A working LaTeX installation with `pdflatex` is required to generate the PDF files.
-    *   **Windows:** MiKTeX (<https://miktex.org/download>)
-    *   **macOS:** MacTeX (<https://www.tug.org/mactex/mactex-download.html>)
-    *   **Linux (Debian/Ubuntu):** `sudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-lang-german` (or `texlive-lang-english` if preferred for LaTeX templates)
-    *   **Linux (Fedora):** `sudo dnf install texlive-scheme-basic texlive-collection-fontsrecommended texlive-collection-langgerman` (or `texlive-collection-langenglish`)
-    Ensure `pdflatex` is available in your system's PATH.
-
-### Build Dependencies
-*   **Rust:** The Rust programming language and Cargo (Rust's package manager) are required to build the project. You can install them from <https://www.rust-lang.org/tools/install>.
 
 ## Build Process
 
@@ -125,9 +111,7 @@ While pre-compiled binaries are provided, you can also build the project from so
 
 ## License
 
-This project, qrlan, is licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
-You can find the full license text in the [LICENSE](LICENSE) file.
-
+This project is licensed under the MIT License. You can find the full license text in the [LICENSE](LICENSE) file.
 
 ### Third-Party Crate Licenses
 
@@ -138,5 +122,3 @@ You can find the full license text in the [LICENSE](LICENSE) file.
 *   `dirs`: MIT License or Apache License 2.0
 *   `heck`: MIT License or Apache License 2.0
 *   `hex`: MIT License or Apache License 2.0
-
-Please refer to the documentation or source code of the respective crates for the most current and specific license information. The `Cargo.lock` file also contains metadata about the exact versions and licenses of all direct and indirect dependencies.
