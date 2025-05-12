@@ -42,6 +42,6 @@ pub fn fetch_password_for_ssid(_ssid: &str) -> Result<Option<String>, String> {
     Ok(None) 
 }
 
-// Note: The actual implementations for get_known_networks (and fetch_password_for_ssid for macOS)
+// Note: The actual implementations for get_known_networks (and fetch_password_for_ssid for macOS/Windows)
 // are located in their respective OS-specific files (e.g., macos.rs, windows.rs, linux.rs).
 // The pub use statements at the top of this file make them available under this module.

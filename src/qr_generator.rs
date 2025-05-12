@@ -1,10 +1,12 @@
 use qrcode::QrCode;
-use image::Luma as QrPixelLuma;
 use image::{ImageBuffer, Luma as ImageLuma, ImageFormat};
 use std::path::Path;
 use std::fs;
 use std::io::Write;
 use std::process::Command;
+
+// Import for SVG-specific color types
+use qrcode::render::svg;
 
 const LATEX_TEMPLATE: &str = include_str!("../resource/layouts/standard.tex");
 const TEMP_QR_IMAGE_FILENAME: &str = "qrlan_qr_temp.png";
@@ -30,11 +32,49 @@ pub fn create_qr_image(data: &str) -> Option<ImageBuffer<ImageLuma<u8>, Vec<u8>>
     // Generate QR code from data.
     QrCode::new(data.as_bytes()).ok().map(|code| {
         // Render the QR code into an image.
-        // Set maximum dimensions for the QR code image.
-        code.render::<QrPixelLuma<u8>>()
+        // Use ImageLuma<u8> directly, as QrPixelLuma should be an alias for it, or we use the type from `image` directly.
+        code.render::<ImageLuma<u8>>()
             .max_dimensions(2400, 2400)
             .build()
     })
+}
+
+/// Saves the given QR code image buffer as a PNG file.
+pub fn save_qr_as_png(
+    qr_image_buffer: &ImageBuffer<ImageLuma<u8>, Vec<u8>>,
+    output_path: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    qr_image_buffer.save_with_format(output_path, ImageFormat::Png)?;
+    Ok(())
+}
+
+/// Saves the given QR code image buffer as a JPG file.
+pub fn save_qr_as_jpg(
+    qr_image_buffer: &ImageBuffer<ImageLuma<u8>, Vec<u8>>,
+    output_path: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    qr_image_buffer.save_with_format(output_path, ImageFormat::Jpeg)?;
+    Ok(())
+}
+
+/// Generates and saves a QR code as an SVG file.
+pub fn save_qr_as_svg(
+    data: &str, // SVG generation might work directly from data
+    output_path: &Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let code = QrCode::new(data.as_bytes()).map_err(|e| format!("Failed to generate QR code for SVG: {}", e))?;
+    
+    // Render the QR code to an SVG string.
+    let image_svg_data = code.render()
+        .min_dimensions(200, 200) 
+        .dark_color(svg::Color("#000000"))  // Black as hex string with svg::Color
+        .light_color(svg::Color("#ffffff")) // White as hex string with svg::Color
+        .build();
+
+    fs::write(output_path, image_svg_data)
+        .map_err(|e| format!("Failed to write SVG file to '{:?}' : {}", output_path, e))?;
+
+    Ok(())
 }
 
 /// Saves the QR code as a PDF by generating a .tex file and compiling it with pdflatex.
@@ -43,6 +83,7 @@ pub fn create_qr_image(data: &str) -> Option<ImageBuffer<ImageLuma<u8>, Vec<u8>>
 /// * `qr_image_buffer` - Buffer containing the QR code image.
 /// * `output_pdf_path` - Path where the final PDF will be saved.
 /// * `title` - Title to be displayed in the PDF above the QR code.
+/// * `custom_template_path` - Optional path to a custom LaTeX template.
 ///
 /// # Errors
 /// Returns an error if any step of the PDF generation process fails (e.g., file I/O, pdflatex execution).
@@ -50,6 +91,7 @@ pub fn save_qr_as_pdf(
     qr_image_buffer: &ImageBuffer<ImageLuma<u8>, Vec<u8>>,
     output_pdf_path: &Path,
     title: &str,
+    custom_template_path: Option<&String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Ensure the output directory exists.
     let output_dir = output_pdf_path.parent().ok_or_else(|| {
@@ -87,7 +129,22 @@ pub fn save_qr_as_pdf(
         .replace('#', "\\#")
         .replace('~', "\\textasciitilde{}");
 
-    let processed_template = LATEX_TEMPLATE
+    let latex_content: String;
+    if let Some(template_path_str) = custom_template_path {
+        let path = Path::new(template_path_str);
+        if !path.exists() || !path.is_file() {
+            return Err(format!("Custom LaTeX template file not found or is not a file: {}", template_path_str).into());
+        }
+        latex_content = fs::read_to_string(path)
+            .map_err(|e| format!("Failed to read custom LaTeX template '{}': {}", template_path_str, e))?;
+        if !latex_content.contains("{{QRLAN_PDF_TITLE}}") || !latex_content.contains("{{QR_CODE_IMAGE_PATH}}") {
+            return Err("Custom LaTeX template is missing required placeholders: {{QRLAN_PDF_TITLE}} and/or {{QR_CODE_IMAGE_PATH}}".into());
+        }
+    } else {
+        latex_content = LATEX_TEMPLATE.to_string();
+    }
+
+    let processed_template = latex_content
         .replace("{{QRLAN_PDF_TITLE}}", &escaped_title) // Replace title placeholder
         .replace("{{QR_CODE_IMAGE_PATH}}", qr_image_filename_for_latex); // Replace image path placeholder
 
