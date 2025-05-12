@@ -136,9 +136,14 @@ This project is licensed under the MIT License. You can find the full license te
 **Third-Party Crate Licenses**
 
 - `clap`: MIT License or Apache License 2.0
-- `qrcode`: MIT License
-- `image`: MIT License
-- `genpdf`: Apache License 2.0 / MIT License
 - `dirs`: MIT License or Apache License 2.0
+- `embed-resource`: MIT License or Apache License 2.0
+- `genpdf`: Apache License 2.0 / MIT License
 - `heck`: MIT License or Apache License 2.0
 - `hex`: MIT License or Apache License 2.0
+- `image`: MIT License
+- `qr2term`: MIT License
+- `qrcode`: MIT License
+- `serde`: MIT License or Apache License 2.0
+- `serde_json`: MIT License or Apache License 2.0
+- `svg`: MIT License
