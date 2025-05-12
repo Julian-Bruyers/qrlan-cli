@@ -102,15 +102,35 @@ try {
 
     if ($PathEntries -notcontains $InstallDir) {
         $NewPath = ($PathEntries + $InstallDir) -join ';'
-        [System.Environment]::SetEnvironmentVariable("Path", $NewPath, "User")
-        Write-Host "'$InstallDir' has been added to your user PATH."
-        Write-Host "IMPORTANT: You must open a new CMD or PowerShell window for the changes to take effect."
+        [System.Environment]::SetEnvironmentVariable("Path", $NewPath, "User") # For future sessions
+        Write-Host "'$InstallDir' has been added to your user PATH (for new terminal sessions)."
         
         # Attempt to update PATH for the current PowerShell session
-        $env:Path = $NewPath
-        Write-Host "PATH has also been updated for the current PowerShell session."
+        $env:Path = $NewPath # For this current session
+        Write-Host "Attempting to update PATH for the current PowerShell session..."
+
+        # Verify if the command is found in the current session's updated PATH
+        if (Get-Command $AppName -ErrorAction SilentlyContinue) {
+            Write-Host "SUCCESS: '$AppName' is now available in THIS PowerShell window."
+            Write-Host "For other terminals (CMD, other PowerShell windows), you still need to open a NEW window."
+        } else {
+            Write-Warning "NOTE: '$AppName' may not be immediately available in this specific PowerShell window, even after attempting to update the PATH."
+            Write-Host "IMPORTANT: Please open a NEW CMD or PowerShell window to use '$AppName'. This is usually required for PATH changes to take full effect."
+        }
     } else {
         Write-Host "'$InstallDir' is already in your user PATH."
+        # Check if usable in current session if already in PATH
+        # The $InstallDir might be in the registry's User PATH but not yet in this specific session's $env:Path
+        # if this session was started before the PATH was set externally.
+        if ($env:Path -like "*$InstallDir*") {
+            if (Get-Command $AppName -ErrorAction SilentlyContinue) {
+                Write-Host "'$AppName' should be available in this PowerShell session as its directory is in the current session's PATH."
+            } else {
+                Write-Warning "Although '$InstallDir' is in this session's PATH, '$AppName' was not found. This can sometimes happen. Try a new terminal window."
+            }
+        } else {
+             Write-Warning "'$InstallDir' is in the user PATH registry setting, but not yet reflected in this current session's PATH. A new terminal window is needed to use '$AppName'."
+        }
     }
 } catch {
     Write-Warning "Could not automatically update PATH. Details: $($_.Exception.Message)"

@@ -72,7 +72,14 @@ You can install `qrlan` on your system using the provided `install.sh` script. T
 
 For Windows, you can download and install the latest release of `qrlan` using a single PowerShell command. This command fetches and executes an installation script from GitHub.
 
-1.  **Run the installation command:**
+1.  **Note on Execution Policy:** If you encounter an error related to script execution being disabled
+    you might need to adjust your PowerShell execution policy. You can allow script execution for the current user by running PowerShell as Administrator and executing:
+    ```powershell
+    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+    ```
+
+
+    **Run the installation command:**
     Open PowerShell (you might need to run it as Administrator if you encounter permission issues or if you want to modify system-wide PATH, though this script installs to user PATH by default).
     Execute the following command:
 
@@ -80,10 +87,6 @@ For Windows, you can download and install the latest release of `qrlan` using a 
     irm https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.ps1 | iex
     ```
 
-    **Note on Execution Policy:** If you encounter an error related to script execution being disabled, you might need to adjust your PowerShell execution policy. You can allow script execution for the current user by running PowerShell as Administrator and executing:
-    ```powershell
-    Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-    ```
     Then, try the `irm | iex` command again.
 
     The script will download the latest `qrlan-windows-amd64.exe` from GitHub, rename it to `qrlan.exe`, copy it to a user-specific programs directory (`%LOCALAPPDATA%\Programs\qrlan`), and add this directory to your user's PATH.
