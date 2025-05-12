@@ -11,7 +11,7 @@ EXPECTED_BINARIES=(
     "${EXE_NAME}-macos-arm64"
     "${EXE_NAME}-macos-amd64"
     "${EXE_NAME}-linux-amd64"
-    "${EXE_NAME}-windows-amd64" # build_all.sh copies the .exe to this name without the extension
+    "${EXE_NAME}-windows-amd64.exe"
 )
 CARGO_TOML_PATH="Cargo.toml"
 

@@ -55,6 +55,17 @@ For Windows, you can download and install the latest release of `qrlan` using a 
         ```
         Then, try the `irm | iex` command again.
 
+    *   **Troubleshooting Execution Policy Issues:**
+        *   If you still encounter an error related to script execution being disabled even after setting the policy to `RemoteSigned`, Windows might have blocked the downloaded script (if you downloaded `install.ps1` manually first instead of using `irm | iex` directly). To unblock it: Right-click `install.ps1` -> Properties -> General -> Click "Unblock" or "Zulassen" at the bottom, then Apply/OK. Then try running `.\install.ps1` again.
+        *   Alternatively, for a single execution, you can bypass the policy directly:
+            ```powershell
+            PowerShell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.ps1 | iex"
+            ```
+        *   Or, if you downloaded `install.ps1` manually:
+            ```powershell
+            PowerShell -ExecutionPolicy Bypass -File .\install.ps1
+            ```
+
     The script will download the latest `qrlan-windows-amd64.exe` from GitHub, rename it to `qrlan.exe`, copy it to a user-specific programs directory (`%LOCALAPPDATA%\Programs\qrlan`), and add this directory to your user's PATH.
 
 2.  **Verify installation:**

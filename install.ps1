@@ -126,3 +126,8 @@ if (Test-Path -Path $DownloadedExePath -PathType Leaf) {
 Write-Host ""
 Write-Host "$AppName installation finished!"
 Write-Host "You should be able to run '$AppName' from any NEW command prompt or PowerShell window."
+
+# Keep the window open until the user presses Enter
+if ($Host.Name -eq 'ConsoleHost') { # Check if running in a console and not ISE/VSCode terminal where this might be annoying
+    Read-Host -Prompt "Press Enter to exit"
+}
