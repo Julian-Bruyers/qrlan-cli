@@ -32,7 +32,8 @@ pub fn get_known_networks() -> Result<Vec<WifiNetwork>, String> {
             // Check if the part before the last colon (trimmed) matches any "All User Profile" keyword
             if line_key_matches_any(potential_key_part.trim_start(), ALL_USER_PROFILE_KEYWORDS) {
                 let ssid = potential_ssid_part.trim().to_string();
-                if ssid.is_empty() || ssid == "<Kein>" || ssid.to_lowercase() == "<none>" { // Skip empty or placeholder SSIDs
+                // Skip empty or placeholder SSIDs like "<Kein>" (German for <None>) or "<none>"
+                if ssid.is_empty() || ssid.eq_ignore_ascii_case("<Kein>") || ssid.eq_ignore_ascii_case("<none>") {
                     continue;
                 }
 
@@ -64,7 +65,8 @@ pub fn get_known_networks() -> Result<Vec<WifiNetwork>, String> {
                                 }
                             }
                         
-                            password = key_content_value.filter(|k| !k.is_empty() && k.to_lowercase() != "not present" && k.to_lowercase() != "nicht vorhanden");
+                            // Filter out keys that indicate no password or are empty
+                            password = key_content_value.filter(|k| !k.is_empty() && !k.eq_ignore_ascii_case("not present") && !k.eq_ignore_ascii_case("nicht vorhanden"));
 
                             if let Some(auth_str) = authentication_value {
                                 if auth_str.contains("WPA2PSK") || auth_str.contains("WPAPSK") || auth_str.contains("WPA2-PERSONAL") || auth_str.contains("WPA-PERSONAL") || auth_str.contains("WPA3SAE") || auth_str.contains("WPA3-PERSONAL") {
@@ -107,25 +109,25 @@ pub fn fetch_password_for_ssid(ssid: &str) -> Result<Option<String>, String> {
         if !error_message_stderr.is_empty() {
             detailed_error.push_str(&format!("Stderr: {}", error_message_stderr));
         }
-        // Manchmal landen Fehler auch in stdout
+        // Sometimes errors also end up in stdout
         if !error_message_stdout.is_empty() {
             if !detailed_error.is_empty() { 
                 detailed_error.push_str("; "); 
             }
-            // Nur einen Teil von stdout anzeigen, falls es sehr lang ist (z.B. die gesamte Profilausgabe ohne Fehler)
+            // Show only a part of stdout if it's very long (e.g., the entire profile output without an error)
             const MAX_STDOUT_ERROR_LEN: usize = 200;
             if error_message_stdout.len() > MAX_STDOUT_ERROR_LEN {
-                detailed_error.push_str(&format!("Stdout (gekürzt): {}...", &error_message_stdout[..MAX_STDOUT_ERROR_LEN]));
+                detailed_error.push_str(&format!("Stdout (truncated): {}...", &error_message_stdout[..MAX_STDOUT_ERROR_LEN]));
             } else {
                 detailed_error.push_str(&format!("Stdout: {}", error_message_stdout));
             }
         }
 
         if detailed_error.is_empty() {
-            detailed_error = format!("Befehl mit Exit-Code {:?} fehlgeschlagen, aber keine spezifische Fehlermeldung auf stderr oder stdout gefunden.", profile_output.status.code());
+            detailed_error = format!("Command failed with exit code {:?}, but no specific error message found on stderr or stdout.", profile_output.status.code());
         }
 
-        return Err(format!("'netsh wlan show profile name={} key=clear' Befehl fehlgeschlagen: {}. Administratorrechte könnten erforderlich sein.", ssid, detailed_error));
+        return Err(format!("'netsh wlan show profile name={} key=clear' command failed: {}. Administrator rights might be required.", ssid, detailed_error));
     }
 
     let profile_details = String::from_utf8_lossy(&profile_output.stdout);
@@ -138,7 +140,8 @@ pub fn fetch_password_for_ssid(ssid: &str) -> Result<Option<String>, String> {
 
             if line_key_matches_any(key_part, KEY_CONTENT_KEYWORDS) {
                 let potential_key = value_part.trim().to_string();
-                if !potential_key.is_empty() && potential_key.to_lowercase() != "not present" && potential_key.to_lowercase() != "nicht vorhanden" {
+                // Filter out keys that indicate no password or are empty
+                if !potential_key.is_empty() && !potential_key.eq_ignore_ascii_case("not present") && !potential_key.eq_ignore_ascii_case("nicht vorhanden") {
                     key_content_value = Some(potential_key);
                     break; 
                 }
