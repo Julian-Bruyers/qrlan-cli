@@ -35,12 +35,15 @@ echo "Starting release process..."
 # 1. Check for GitHub CLI
 check_gh_installed
 
-# 2. Delete the binaries folder
+# 2. Clean the build environment
+cargo clean
+
+# 3. Delete the binaries folder
 echo "Removing existing '$RELEASE_DIR' directory..."
 rm -rf "$RELEASE_DIR"
 echo "'$RELEASE_DIR' directory removed."
 
-# 3. Execute build_all.sh
+# 4. Execute build_all.sh
 echo "Running build_all.sh script..."
 if ! ./build_all.sh; then
     echo "Error: build_all.sh failed. Aborting release."
@@ -48,7 +51,7 @@ if ! ./build_all.sh; then
 fi
 echo "build_all.sh completed successfully."
 
-# 4. Verify binaries
+# 5. Verify binaries
 echo "Verifying compiled binaries..."
 MISSING_FILES=false
 for binary_name in "${EXPECTED_BINARIES[@]}"; do
@@ -67,7 +70,7 @@ if [ "$MISSING_FILES" = true ]; then
 fi
 echo "All expected binaries verified."
 
-# 5. Prepare release details
+# 6. Prepare release details
 # Get version from Cargo.toml
 APP_VERSION=$(grep '^version *=' "$CARGO_TOML_PATH" | sed 's/version *= *\"\(.*\)\"/\1/')
 if [ -z "$APP_VERSION" ]; then
@@ -86,7 +89,7 @@ RELEASE_TITLE="${TAG_NAME}" # Set release title to be the same as the tag
 echo "Release Tag: $TAG_NAME"
 echo "Release Title: $RELEASE_TITLE"
 
-# 6. Create GitHub Release
+# 7. Create GitHub Release
 echo "Creating GitHub release..."
 
 # Construct the list of asset paths for the gh release create command

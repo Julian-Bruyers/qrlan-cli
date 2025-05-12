@@ -87,7 +87,7 @@ For Windows, you can download and install the latest release of `qrlan` using a 
 
 Open `PowerShell` as an administrator and execute the following command:
 
-```powershell
+```bash
 irm https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.ps1 | iex
 ```
 
