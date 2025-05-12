@@ -1,9 +1,64 @@
 // build.rs
 
+use std::collections::HashMap;
+use std::env;
+use std::fs;
+use std::path::Path;
+
+use serde::Deserialize; // Stellt sicher, dass serde hier verfügbar ist
+
+#[derive(Deserialize, Debug)]
+struct TranslationItem {
+    #[serde(flatten)]
+    languages: HashMap<String, String>,
+}
+
+#[derive(Deserialize, Debug)]
+struct TranslationFile {
+    translations: HashMap<String, TranslationItem>,
+}
+
 fn main() {
-    // Nur für Windows-Ziele ausführen
-    if std::env::var("TARGET").unwrap().contains("windows") {
-        // Compile the Windows manifest by referencing the .rc file
-        embed_resource::compile("qrlan.rc", embed_resource::NONE);
+    println!("cargo:rerun-if-changed=resource/translation/translation.qrlan");
+    println!("cargo:rerun-if-changed=build.rs");
+
+    let translation_file_path = Path::new("resource/translation/translation.qrlan");
+    let translation_content = fs::read_to_string(translation_file_path)
+        .unwrap_or_else(|e| panic!("Konnte translation.qrlan nicht lesen: {}", e));
+
+    let parsed_translations: TranslationFile = serde_json::from_str(&translation_content)
+        .unwrap_or_else(|e| panic!("Konnte JSON aus translation.qrlan nicht parsen: {}. Stelle sicher, dass serde und serde_json als [build-dependencies] in Cargo.toml deklariert sind.", e));
+
+    let mut generated_code = String::from("// Dieser Code wurde von build.rs generiert\n");
+
+    let keys_to_generate = [
+        ("Authentication", "AUTHENTICATION_KEYWORDS"),
+        ("Key Content", "KEY_CONTENT_KEYWORDS"),
+        ("All User Profile", "ALL_USER_PROFILE_KEYWORDS"),
+    ];
+
+    for (json_key, const_name) in keys_to_generate.iter() {
+        if let Some(translation_item) = parsed_translations.translations.get(*json_key) {
+            let keywords: Vec<String> = translation_item.languages.values().cloned().collect();
+            let keywords_str_array = format!("{:?}", keywords);
+            generated_code.push_str(&format!(
+                "pub const {}: &[&str] = &{};\n",
+                const_name, keywords_str_array
+            ));
+        } else {
+            eprintln!(
+                "cargo:warning=Schlüssel '{}' nicht in translation.qrlan gefunden. Generiere leeres Array für {}.",
+                json_key, const_name
+            );
+            generated_code.push_str(&format!(
+                "pub const {}: &[&str] = &[];\n",
+                const_name
+            ));
+        }
     }
+
+    let out_dir = env::var_os("OUT_DIR").unwrap();
+    let dest_path = Path::new(&out_dir).join("generated_translations.rs");
+    fs::write(&dest_path, generated_code)
+        .unwrap_or_else(|e| panic!("Konnte generierte Übersetzungsdatei nicht schreiben: {}", e));
 }
