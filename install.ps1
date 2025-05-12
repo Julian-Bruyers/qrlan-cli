@@ -98,6 +98,14 @@ try {
 Write-Host "Adding '$InstallDir' to user PATH environment variable..."
 try {
     $CurrentUserPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+    
+    # Ensure existing path string ends with a semicolon if it's not empty and doesn't already have one.
+    # This is a preparatory step; the subsequent split and join logic is robust,
+    # but this makes the handling of a non-semicolon-terminated path explicit.
+    if (-not [string]::IsNullOrWhiteSpace($CurrentUserPath) -and -not $CurrentUserPath.EndsWith(";")) {
+        $CurrentUserPath += ";"
+    }
+    
     $PathEntries = $CurrentUserPath -split ';' | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 
     if ($PathEntries -notcontains $InstallDir) {
