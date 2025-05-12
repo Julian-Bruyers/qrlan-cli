@@ -97,24 +97,30 @@ try {
 # 5. Add installation directory to user's PATH environment variable
 Write-Host "Adding '$InstallDir' to user PATH environment variable..."
 try {
-    $CurrentUserPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
+    $OriginalUserPath = [System.Environment]::GetEnvironmentVariable("Path", "User")
     
-    # Ensure existing path string ends with a semicolon if it's not empty and doesn't already have one.
-    # This is a preparatory step; the subsequent split and join logic is robust,
-    # but this makes the handling of a non-semicolon-terminated path explicit.
-    if (-not [string]::IsNullOrWhiteSpace($CurrentUserPath) -and -not $CurrentUserPath.EndsWith(";")) {
-        $CurrentUserPath += ";"
-    }
-    
-    $PathEntries = $CurrentUserPath -split ';' | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    # Create a clean list of existing path entries for the check
+    $ExistingPathEntries = $OriginalUserPath -split ';' | ForEach-Object { $_.Trim() } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
 
-    if ($PathEntries -notcontains $InstallDir) {
-        $NewPath = ($PathEntries + $InstallDir) -join ';'
-        [System.Environment]::SetEnvironmentVariable("Path", $NewPath, "User") # For future sessions
+    if ($ExistingPathEntries -notcontains $InstallDir) {
+        $NewUserPath = ""
+        if ([string]::IsNullOrWhiteSpace($OriginalUserPath)) {
+            # Path was empty, new path is just the install directory
+            $NewUserPath = $InstallDir
+        } else {
+            # Path was not empty, append appropriately
+            if ($OriginalUserPath.EndsWith(";")) {
+                $NewUserPath = $OriginalUserPath + $InstallDir
+            } else {
+                $NewUserPath = $OriginalUserPath + ";" + $InstallDir
+            }
+        }
+        
+        [System.Environment]::SetEnvironmentVariable("Path", $NewUserPath, "User") # For future sessions
         Write-Host "'$InstallDir' has been added to your user PATH (for new terminal sessions)."
         
         # Attempt to update PATH for the current PowerShell session
-        $env:Path = $NewPath # For this current session
+        $env:Path = $NewUserPath # For this current session
         Write-Host "Attempting to update PATH for the current PowerShell session..."
 
         # Verify if the command is found in the current session's updated PATH
