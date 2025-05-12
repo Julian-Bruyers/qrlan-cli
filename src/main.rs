@@ -35,13 +35,14 @@ fn check_pdflatex_availability() -> Result<(), String> {
             if output.status.success() {
                 Ok(())
             } else {
-                Err("pdflatex --version command failed. Is LaTeX installed and in your PATH?".to_string())
+                Err(
+                    "Error: \nNo LaTeX distribution was found. Ensure that the \"pdflatex\" command is available.\n\nFor Windows use:\nMiKTeX (https://miktex.org/download)\n\nFor macOS use:\nMacTeX (https://www.tug.org/mactex/mactex-download.html)\n\nFor Linux (Debian/Ubuntu) use:\nsudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-lang-english\n\nFor Linux (Fedora) use:\nsudo dnf install texlive-scheme-basic texlive-collection-fontsrecommended texlive-collection-langenglish".to_string()
+                )
             }
         }
         Err(_) => {
             Err(
-                "pdflatex command not found. Please install a LaTeX distribution (e.g., MiKTeX for Windows, MacTeX for macOS, or TeX Live for Linux) and ensure pdflatex is in your system's PATH. \
-                For example, on Debian/Ubuntu, you might run: sudo apt-get install texlive-latex-base".to_string()
+                "Error: \nNo LaTeX distribution was found. Ensure that the \"pdflatex\" command is available.\n\nFor Windows use:\nMiKTeX (https://miktex.org/download)\n\nFor macOS use:\nMacTeX (https://www.tug.org/mactex/mactex-download.html)\n\nFor Linux (Debian/Ubuntu) use:\nsudo apt-get install texlive-latex-base texlive-fonts-recommended texlive-lang-english\n\nFor Linux (Fedora) use:\nsudo dnf install texlive-scheme-basic texlive-collection-fontsrecommended texlive-collection-langenglish".to_string()
             )
         }
     }
@@ -50,7 +51,6 @@ fn check_pdflatex_availability() -> Result<(), String> {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Check for pdflatex availability at the very beginning.
     if let Err(err_msg) = check_pdflatex_availability() {
-        eprintln!("Error: {}", err_msg);
         return Err(err_msg.into());
     }
 
