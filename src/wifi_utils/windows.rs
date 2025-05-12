@@ -1,5 +1,4 @@
 use std::process::Command;
-use std::str;
 use super::WifiNetwork;
 
 pub fn get_known_networks() -> Result<Vec<WifiNetwork>, String> {

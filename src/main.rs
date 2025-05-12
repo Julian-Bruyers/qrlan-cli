@@ -127,33 +127,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     println!("Selected network: {}", selected_network.ssid);
 
-    // Attempt to fetch password if not already available (e.g., from macOS Keychain).
-    let mut final_password = selected_network.password.clone();
+    // Attempt to fetch password if not already available from the network struct.
+    let mut final_password_candidate = selected_network.password.clone();
 
-    if final_password.is_none() {
-        // Platform-specific password fetching (example for macOS).
-        #[cfg(target_os = "macos")]
-        {
-            match crate::wifi_utils::fetch_password_for_ssid(&selected_network.ssid) {
-                Ok(Some(p_macos)) => {
-                    final_password = Some(p_macos);
-                }
-                Ok(None) => {
-                    println!("Password not found in Keychain for '{}', or access was denied. Please enter it manually.", selected_network.ssid);
-                }
-                Err(e) => {
-                    eprintln!("Error attempting to fetch password from Keychain for '{}': {}. Please enter it manually.", selected_network.ssid, e);
-                }
+    if final_password_candidate.is_none() {
+        // Try to fetch password using OS-specific utilities via wifi_utils.
+        match crate::wifi_utils::fetch_password_for_ssid(&selected_network.ssid) {
+            Ok(Some(fetched_p)) => {
+                println!("Successfully fetched password for '{}'.", selected_network.ssid);
+                final_password_candidate = Some(fetched_p);
+            }
+            Ok(None) => {
+                // For macOS, this means not found in Keychain or access denied.
+                // For other OSes (with the current dummy impl), this is the expected path.
+                #[cfg(target_os = "macos")]
+                println!("Password for '{}' not found in Keychain or access was denied. Please enter it manually.", selected_network.ssid);
+                
+                // You could add a generic message for other OSes here if desired,
+                // but often it's fine to just proceed to manual entry silently if auto-fetch is not supported/successful.
+                // e.g., println!("Could not automatically fetch password for '{}'. Please enter it manually.", selected_network.ssid);
+            }
+            Err(e) => {
+                eprintln!("Error attempting to fetch password for '{}': {}. Please enter it manually.", selected_network.ssid, e);
             }
         }
-        // Add similar blocks for other OS if password fetching logic exists for them.
-        // #[cfg(target_os = "windows")] { ... }
-        // #[cfg(target_os = "linux")] { ... }
     }
 
-    // Prompt for password if not fetched automatically.
-    let password = if let Some(p) = final_password {
-        p // Use fetched password
+    // Prompt for password if it's still not available.
+    let password = if let Some(p) = final_password_candidate {
+        p // Use existing or fetched password
     } else {
         print!("Enter the password for '{}' (leave empty for an open network): ", selected_network.ssid);
         io::stdout().flush()?;

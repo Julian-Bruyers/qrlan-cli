@@ -42,7 +42,11 @@ build_target() {
     fi
 
     local src_path="target/$rust_target/release/$src_exe_filename"
-    local dest_filename="${EXE_NAME}-${os_name}-${arch_name}"
+    local dest_filename_base="${EXE_NAME}-${os_name}-${arch_name}"
+    local dest_filename="$dest_filename_base"
+    if [ "$is_windows_target" = "true" ]; then
+        dest_filename="${dest_filename_base}.exe"
+    fi
     local dest_path="$RELEASE_DIR/$dest_filename"
 
     if [ -f "$src_path" ]; then
@@ -81,9 +85,6 @@ echo " - For '-pc-windows-msvc' targets: Windows SDK and MSVC build tools (usual
 
 # Windows x86_64 (GNU toolchain for potentially easier cross-compilation)
 build_target "x86_64-pc-windows-gnu" "windows" "amd64" "true"
-
-# Windows ARM64 (MSVC toolchain - often requires building on a Windows ARM64 machine or a sophisticated cross-compilation setup)
-build_target "aarch64-pc-windows-msvc" "windows" "arm64" "true"
 
 echo ""
 echo "-----------------------------------------------------"

@@ -10,17 +10,21 @@ qrlan is a command-line tool that generates printable PDF files containing a QR 
 
 ## Platform Support
 
-Currently, qrlan is primarily developed and tested for **macOS**.
+`qrlan` is designed to be cross-platform. Binaries are built for macOS (ARM64 and AMD64), Linux (AMD64), and Windows (AMD64).
 
-While the core QR code generation logic is platform-independent, and the tool can be compiled for Windows and Linux, full support including automatic Wi-Fi network retrieval and seamless system integration is currently only available for macOS.
+*   **macOS:** Full support, including automatic Wi-Fi network retrieval and installation via `install.sh`.
+*   **Linux:** Automatic Wi-Fi network retrieval is supported. Installation via `install.sh` is available.
+*   **Windows:** Automatic Wi-Fi network retrieval is supported. Installation is facilitated by the `install.ps1` PowerShell script.
 
-Support for **Windows** and **Linux** (including automatic network retrieval and easier installation through the `install.sh` script or other means) is planned for future releases.
-
-Manual input of network details to generate a QR code will work on any platform where the tool can be compiled and run, provided the LaTeX dependency is met. The `install.sh` script is currently designed for macOS and Linux-like environments.
+Manual input of network details to generate a QR code will work on any platform where the tool can be compiled and run, provided the LaTeX dependency is met.
 
 ## Installation
 
-You can install `qrlan` on your system using the provided `install.sh` script. This script will download the latest release binary for your operating system and architecture from GitHub and attempt to install it into a common binary location.
+Binaries for macOS, Linux, and Windows are created with each release.
+
+### macOS and Linux
+
+You can install `qrlan` on your system using the provided `install.sh` script. This script will download the latest release binary for your operating system and architecture from GitHub and attempt to install it into a common binary location (`/usr/local/bin` by default).
 
 1.  **Download and run the installation script:**
     ```bash
@@ -32,7 +36,32 @@ You can install `qrlan` on your system using the provided `install.sh` script. T
     ```bash
     qrlan --version
     ```
-    This will display the installed version of `qrlan`.
+
+### Windows
+
+For Windows, you can download and install the latest release of `qrlan` using a single PowerShell command. This command fetches and executes an installation script from GitHub.
+
+1.  **Run the installation command:**
+    Open PowerShell (you might need to run it as Administrator if you encounter permission issues or if you want to modify system-wide PATH, though this script installs to user PATH by default).
+    Execute the following command:
+
+    ```powershell
+    irm https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.ps1 | iex
+    ```
+
+    *   **Note on Execution Policy:** If you encounter an error related to script execution being disabled, you might need to adjust your PowerShell execution policy. You can allow script execution for the current user by running PowerShell as Administrator and executing:
+        ```powershell
+        Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+        ```
+        Then, try the `irm | iex` command again.
+
+    The script will download the latest `qrlan-windows-amd64.exe` from GitHub, rename it to `qrlan.exe`, copy it to a user-specific programs directory (`%LOCALAPPDATA%\Programs\qrlan`), and add this directory to your user's PATH.
+
+2.  **Verify installation:**
+    Open a **new** Command Prompt or PowerShell window (this is important for the PATH changes to take effect). You should then be able to run `qrlan` directly:
+    ```bash
+    qrlan --version
+    ```
 
 ## Usage
 
@@ -70,26 +99,18 @@ You can specify an output directory or a full file path for the generated PDF:
 
 ## Build Process
 
+While pre-compiled binaries are provided, you can also build the project from source.
+
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/julian-bruyers/qrlan.git
-    cd qrlan
+    git clone https://github.com/julian-bruyers/qrlan-cli.git
+    cd qrlan-cli
     ```
 2.  **Build the project:**
     ```bash
-    cargo build
-    ```
-    For a release build (optimized):
-    ```bash
     cargo build --release
     ```
-3.  **Run the executable:**
-    The executable will be located at `target/debug/qrlan` for a debug build or `target/release/qrlan` for a release build.
-    ```bash
-    ./target/debug/qrlan
-    # or for the release build
-    ./target/release/qrlan
-    ```
+    The executable will be located at `target/release/qrlan` (or `target/release/qrlan.exe` on Windows).
 
 ## License
 
