@@ -11,6 +11,8 @@ pub use macos::get_known_networks;
 pub use macos::fetch_password_for_ssid; // Export new function
 #[cfg(target_os = "windows")]
 pub use windows::get_known_networks;
+#[cfg(target_os = "windows")]
+pub use windows::fetch_password_for_ssid; // Export for Windows
 #[cfg(target_os = "linux")]
 pub use linux::get_known_networks;
 
@@ -30,11 +32,11 @@ pub fn get_known_networks() -> Result<Vec<WifiNetwork>, String> {
     Ok(Vec::new())
 }
 
-// Dummy implementations for password fetching on non-macOS platforms.
-// These can be expanded with actual implementations for Windows and Linux in the future.
-#[cfg(not(target_os = "macos"))]
+// Dummy implementations for password fetching on non-macOS/non-Windows platforms.
+// These can be expanded with actual implementations for Linux in the future.
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
 pub fn fetch_password_for_ssid(_ssid: &str) -> Result<Option<String>, String> {
-    // This function is primarily intended for macOS (Keychain access).
+    // This function is primarily intended for macOS (Keychain access) and Windows (netsh).
     // For other OS, a general solution is complex and might require specific privileges or tools.
     // Returning Ok(None) indicates that the password was not automatically fetched.
     Ok(None) 

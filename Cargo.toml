@@ -11,3 +11,6 @@ genpdf = { version = "0.2.0", features = ["images"] }
 dirs = "5.0"
 heck = "0.5"
 hex = "0.4"
+
+[build-dependencies]
+embed-resource = "2.5.1"

@@ -93,3 +93,34 @@ pub fn get_known_networks() -> Result<Vec<WifiNetwork>, String> {
     }
     Ok(networks)
 }
+
+pub fn fetch_password_for_ssid(ssid: &str) -> Result<Option<String>, String> {
+    let profile_output = Command::new("netsh")
+        .args(&["wlan", "show", "profile", &format!("name=\"{}\"", ssid), "key=clear"])
+        .output()
+        .map_err(|e| format!("Failed to execute 'netsh wlan show profile name=\"{}\" key=clear': {}", ssid, e))?;
+
+    if !profile_output.status.success() {
+        let error_message = String::from_utf8_lossy(&profile_output.stderr);
+        // It's common to fail if not run as admin, so this might not always be a hard error for the user.
+        // However, we return an error string to indicate the attempt was made but failed.
+        return Err(format!("'netsh wlan show profile name=\"{}\" key=clear' command failed: {}. May require administrator privileges.", ssid, error_message.trim()));
+    }
+
+    let profile_details = String::from_utf8_lossy(&profile_output.stdout);
+    let mut key_content: Option<String> = None;
+
+    for detail_line in profile_details.lines() {
+        let trimmed_line = detail_line.trim();
+        if trimmed_line.starts_with("Key Content") {
+            if let Some(kc) = trimmed_line.split(":").nth(1) {
+                let potential_key = kc.trim().to_string();
+                if !potential_key.is_empty() && potential_key.to_lowercase() != "not present" {
+                    key_content = Some(potential_key);
+                    break; // Found the key, no need to parse further
+                }
+            }
+        }
+    }
+    Ok(key_content)
+}

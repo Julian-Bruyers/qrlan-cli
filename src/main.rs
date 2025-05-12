@@ -51,7 +51,8 @@ fn check_pdflatex_availability() -> Result<(), String> {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Check for pdflatex availability at the very beginning.
     if let Err(err_msg) = check_pdflatex_availability() {
-        return Err(err_msg.into());
+        eprintln!("{}", err_msg); // Direkte Ausgabe der formatierten Fehlermeldung
+        std::process::exit(1);   // Programm mit Fehlercode beenden
     }
 
     let args = Args::parse(); // Parse arguments. Version flag is handled by clap.
