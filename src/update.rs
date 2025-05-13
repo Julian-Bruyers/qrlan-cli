@@ -5,8 +5,8 @@ use lazy_static::lazy_static;
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 const GITHUB_API_URL: &str = "https://api.github.com/repos/Julian-Bruyers/qrlan-cli/releases/latest";
 const REPO_URL: &str = "https://github.com/Julian-Bruyers/qrlan-cli";
-const INSTALL_SH_URL: &str = "https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.sh";
-const INSTALL_PS1_URL: &str = "https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.ps1";
+const INSTALL_SH_URL: &str = "https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/scripts/install.sh";
+const INSTALL_PS1_URL: &str = "https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/scripts/install.ps1";
 
 #[derive(Deserialize, Debug)]
 struct GitHubRelease {
