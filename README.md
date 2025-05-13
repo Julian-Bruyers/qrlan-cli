@@ -68,7 +68,7 @@ You can install `qrlan` on your system using the provided `install.sh` script. T
 **Download and run the installation script:**
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/scripts/install.sh | sudo bash
 ```
 
 **Verify installation:**
@@ -88,7 +88,7 @@ For Windows, you can download and install the latest release of `qrlan` using a 
 Open `PowerShell` as an administrator and execute the following command:
 
 ```bash
-irm https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/scripts/install.ps1 | iex
 ```
 
 The script will download the latest `qrlan-windows-amd64.exe` from GitHub, rename it to `qrlan.exe`, copy it to a user-specificprograms directory (`%LOCALAPPDATA%\Programs\qrlan`), and add this directory to your user's PATH.
