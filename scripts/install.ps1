@@ -82,7 +82,18 @@ if (-not (Test-Path -Path $InstallDir -PathType Container)) {
     Write-Host "Installation directory '$InstallDir' already exists."
 }
 
-# 4. Copy and rename the executable
+# 4. Remove existing executable if it exists, then copy and rename the new one
+if (Test-Path -Path $TargetExePath -PathType Leaf) {
+    Write-Host "Removing existing executable at '$TargetExePath'..."
+    try {
+        Remove-Item -Path $TargetExePath -Force -ErrorAction Stop
+        Write-Host "Successfully removed existing executable."
+    } catch {
+        Write-Warning "Warning: Could not remove existing executable at '$TargetExePath'. Attempting to overwrite. Details: $($_.Exception.Message)"
+        # Continue, as Copy-Item -Force might still work
+    }
+}
+
 Write-Host "Installing '$AppName' to '$TargetExePath'..."
 try {
     # Copy the downloaded file (e.g., qrlan-windows-amd64.exe) to the target path (e.g., ...\qrlan.exe)

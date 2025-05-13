@@ -111,85 +111,110 @@ print_info "$EXE_NAME has been made executable."
 print_info "Attempting to install $EXE_NAME to user directory: $INSTALL_DIR_USER"
 mkdir -p "$INSTALL_DIR_USER" # Ensure the directory exists
 
-INSTALL_PATH="$INSTALL_DIR_USER/$EXE_NAME"
+# Determine the final installation path
+FINAL_INSTALL_PATH="$INSTALL_DIR_USER/$EXE_NAME"
+if [ "$INSTALL_MODE" = "system" ]; then
+    FINAL_INSTALL_PATH="$INSTALL_DIR_SYSTEM/$EXE_NAME"
+fi
 
-if mv "$DOWNLOAD_PATH" "$INSTALL_PATH"; then
-    print_success "$EXE_NAME successfully installed to $INSTALL_PATH."
+# Before copying, remove the existing binary if it exists
+if [ -f "$FINAL_INSTALL_PATH" ]; then
+    print_info "Removing existing binary at $FINAL_INSTALL_PATH..."
+    sudo rm -f "$FINAL_INSTALL_PATH"
+    if [ $? -ne 0 ]; then
+        print_error "Failed to remove existing binary. Please check permissions or remove it manually."
+        # We can choose to exit here or let the cp command try and potentially fail
+        # For now, let's print an error and continue, as cp might still succeed with sudo.
+    fi
+fi
 
-    # Attempt to automatically update shell configuration for PATH
-    SHELL_CONFIG_FILE=""
-    # Attempt to get shell, default to "unknown" if $SHELL is not set or basename fails
-    CURRENT_SHELL_BASENAME=$(basename "$SHELL" 2>/dev/null) || CURRENT_SHELL_BASENAME="unknown"
+# Copy the binary to the installation directory
+print_info "Installing $EXE_NAME to $FINAL_INSTALL_PATH..."
+if [ "$INSTALL_MODE" = "system" ]; then
+    sudo cp "$DOWNLOAD_PATH" "$FINAL_INSTALL_PATH"
+else
+    cp "$DOWNLOAD_PATH" "$FINAL_INSTALL_PATH"
+fi
 
-    if [ "$CURRENT_SHELL_BASENAME" = "bash" ]; then
-        SHELL_CONFIG_FILE="$EFFECTIVE_HOME/.bashrc" # Use EFFECTIVE_HOME
-    elif [ "$CURRENT_SHELL_BASENAME" = "zsh" ]; then
-        SHELL_CONFIG_FILE="$EFFECTIVE_HOME/.zshrc" # Use EFFECTIVE_HOME
-    elif [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
-        SHELL_CONFIG_FILE="$EFFECTIVE_HOME/.config/fish/config.fish" # Use EFFECTIVE_HOME
-        # Ensure fish config directory exists for fish shell
-        if [ ! -d "$EFFECTIVE_HOME/.config/fish" ]; then # Use EFFECTIVE_HOME
-            mkdir -p "$EFFECTIVE_HOME/.config/fish" # Use EFFECTIVE_HOME
+if [ $? -ne 0 ]; then
+    print_error "Failed to copy $EXE_NAME to $FINAL_INSTALL_PATH. Please check permissions."
+    exit 1
+fi
+
+INSTALL_PATH="$FINAL_INSTALL_PATH"
+
+print_success "$EXE_NAME successfully installed to $INSTALL_PATH."
+
+# Attempt to automatically update shell configuration for PATH
+SHELL_CONFIG_FILE=""
+# Attempt to get shell, default to "unknown" if $SHELL is not set or basename fails
+CURRENT_SHELL_BASENAME=$(basename "$SHELL" 2>/dev/null) || CURRENT_SHELL_BASENAME="unknown"
+
+if [ "$CURRENT_SHELL_BASENAME" = "bash" ]; then
+    SHELL_CONFIG_FILE="$EFFECTIVE_HOME/.bashrc" # Use EFFECTIVE_HOME
+elif [ "$CURRENT_SHELL_BASENAME" = "zsh" ]; then
+    SHELL_CONFIG_FILE="$EFFECTIVE_HOME/.zshrc" # Use EFFECTIVE_HOME
+elif [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
+    SHELL_CONFIG_FILE="$EFFECTIVE_HOME/.config/fish/config.fish" # Use EFFECTIVE_HOME
+    # Ensure fish config directory exists for fish shell
+    if [ ! -d "$EFFECTIVE_HOME/.config/fish" ]; then # Use EFFECTIVE_HOME
+        mkdir -p "$EFFECTIVE_HOME/.config/fish" # Use EFFECTIVE_HOME
+    fi
+fi
+
+# Define the line to add for PATH modification
+PATH_EXPORT_LINE="export PATH=\"$INSTALL_DIR_USER:\$PATH\"" # For bash/zsh
+FISH_ADD_PATH_LINE="fish_add_path \"$INSTALL_DIR_USER\""    # For fish
+
+if [ -n "$SHELL_CONFIG_FILE" ]; then
+    # Determine the correct line to add based on the shell
+    LINE_TO_ADD="$PATH_EXPORT_LINE"
+    if [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
+        LINE_TO_ADD="$FISH_ADD_PATH_LINE"
+    fi
+
+    # Create the shell config file if it doesn't exist
+    if [ ! -f "$SHELL_CONFIG_FILE" ]; then
+        print_info "Shell configuration file $SHELL_CONFIG_FILE not found. Creating it."
+        touch "$SHELL_CONFIG_FILE"
+    fi
+    
+    PATH_ALREADY_CONFIGURED=false
+    if [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
+        # Check if fish_add_path command for this directory exists (allowing for quotes)
+        if grep -q "fish_add_path.*[\"']\\{0,1\\}$INSTALL_DIR_USER[\"']\\{0,1\\}" "$SHELL_CONFIG_FILE"; then
+            PATH_ALREADY_CONFIGURED=true
+        fi
+    else # For bash/zsh
+        # Check if INSTALL_DIR_USER is part of an 'export PATH=' assignment
+        if grep -q "export PATH=.*$INSTALL_DIR_USER" "$SHELL_CONFIG_FILE"; then 
+            PATH_ALREADY_CONFIGURED=true
         fi
     fi
 
-    # Define the line to add for PATH modification
-    PATH_EXPORT_LINE="export PATH=\"$INSTALL_DIR_USER:\$PATH\"" # For bash/zsh
-    FISH_ADD_PATH_LINE="fish_add_path \"$INSTALL_DIR_USER\""    # For fish
-
-    if [ -n "$SHELL_CONFIG_FILE" ]; then
-        # Determine the correct line to add based on the shell
-        LINE_TO_ADD="$PATH_EXPORT_LINE"
-        if [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
-            LINE_TO_ADD="$FISH_ADD_PATH_LINE"
-        fi
-
-        # Create the shell config file if it doesn't exist
-        if [ ! -f "$SHELL_CONFIG_FILE" ]; then
-            print_info "Shell configuration file $SHELL_CONFIG_FILE not found. Creating it."
-            touch "$SHELL_CONFIG_FILE"
-        fi
-        
-        PATH_ALREADY_CONFIGURED=false
-        if [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
-            # Check if fish_add_path command for this directory exists (allowing for quotes)
-            if grep -q "fish_add_path.*[\"']\\{0,1\\}$INSTALL_DIR_USER[\"']\\{0,1\\}" "$SHELL_CONFIG_FILE"; then
-                PATH_ALREADY_CONFIGURED=true
-            fi
-        else # For bash/zsh
-            # Check if INSTALL_DIR_USER is part of an 'export PATH=' assignment
-            if grep -q "export PATH=.*$INSTALL_DIR_USER" "$SHELL_CONFIG_FILE"; then 
-                PATH_ALREADY_CONFIGURED=true
-            fi
-        fi
-
-        if ! $PATH_ALREADY_CONFIGURED; then
-            print_info "Adding $INSTALL_DIR_USER to PATH in $SHELL_CONFIG_FILE."
-            echo "" >> "$SHELL_CONFIG_FILE" # Add a newline for separation
-            echo "# Added by $EXE_NAME installer to include $INSTALL_DIR_USER in PATH" >> "$SHELL_CONFIG_FILE"
-            echo "$LINE_TO_ADD" >> "$SHELL_CONFIG_FILE"
-            print_success "$INSTALL_DIR_USER successfully added to PATH in $SHELL_CONFIG_FILE."
-            print_warning "Please run 'source $SHELL_CONFIG_FILE' or open a new terminal session for the $EXE_NAME command to be available."
-        else
-            print_info "$INSTALL_DIR_USER appears to be already configured in PATH in $SHELL_CONFIG_FILE."
-            print_warning "If $EXE_NAME is not found or you've just updated, please run 'source $SHELL_CONFIG_FILE' or open a new terminal session."
-        fi
+    if ! $PATH_ALREADY_CONFIGURED; then
+        print_info "Adding $INSTALL_DIR_USER to PATH in $SHELL_CONFIG_FILE."
+        echo "" >> "$SHELL_CONFIG_FILE" # Add a newline for separation
+        echo "# Added by $EXE_NAME installer to include $INSTALL_DIR_USER in PATH" >> "$SHELL_CONFIG_FILE"
+        echo "$LINE_TO_ADD" >> "$SHELL_CONFIG_FILE"
+        print_success "$INSTALL_DIR_USER successfully added to PATH in $SHELL_CONFIG_FILE."
+        print_warning "Please run 'source $SHELL_CONFIG_FILE' or open a new terminal session for the $EXE_NAME command to be available."
     else
-        # Fallback message if shell cannot be determined or is unsupported by this script's auto-config
-        print_warning "Could not automatically update your shell configuration for '$CURRENT_SHELL_BASENAME' shell."
-        print_warning "Please ensure that $INSTALL_DIR_USER is included in your PATH."
-        echo "You can do this by adding the following to your shell configuration file:"
-        # Provide specific instruction even if auto-update failed, based on detected shell if possible
-        if [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
-            echo "$FISH_ADD_PATH_LINE"
-        else # Default to bash/zsh style
-            echo "$PATH_EXPORT_LINE"
-        fi
-        echo "Then, restart your shell or source your configuration file."
+        print_info "$INSTALL_DIR_USER appears to be already configured in PATH in $SHELL_CONFIG_FILE."
+        print_warning "If $EXE_NAME is not found or you've just updated, please run 'source $SHELL_CONFIG_FILE' or open a new terminal session."
     fi
 else
-    print_error "Installation to $INSTALL_PATH failed."
-    exit 1
+    # Fallback message if shell cannot be determined or is unsupported by this script's auto-config
+    print_warning "Could not automatically update your shell configuration for '$CURRENT_SHELL_BASENAME' shell."
+    print_warning "Please ensure that $INSTALL_DIR_USER is included in your PATH."
+    echo "You can do this by adding the following to your shell configuration file:"
+    # Provide specific instruction even if auto-update failed, based on detected shell if possible
+    if [ "$CURRENT_SHELL_BASENAME" = "fish" ]; then
+        echo "$FISH_ADD_PATH_LINE"
+    else # Default to bash/zsh style
+        echo "$PATH_EXPORT_LINE"
+    fi
+    echo "Then, restart your shell or source your configuration file."
 fi
 
 exit 0
