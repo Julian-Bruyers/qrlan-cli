@@ -45,7 +45,7 @@ echo "'$RELEASE_DIR' directory removed."
 
 # 4. Execute build_all.sh
 echo "Running build_all.sh script..."
-if ! ./build_all.sh; then
+if ! "$(dirname "$0")/build_all.sh"; then # Corrected path to build_all.sh
     echo "Error: build_all.sh failed. Aborting release."
     exit 1
 fi
