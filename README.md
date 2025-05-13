@@ -141,8 +141,11 @@ This project is licensed under the MIT License. You can find the full license te
 - `heck`: MIT License or Apache License 2.0
 - `hex`: MIT License or Apache License 2.0
 - `image`: MIT License
+- `lazy_static`: MIT License or Apache License 2.0
 - `qr2term`: MIT License
 - `qrcode`: MIT License
+- `regex`: MIT License or Apache License 2.0
+- `reqwest`: MIT License or Apache License 2.0
 - `serde`: MIT License or Apache License 2.0
 - `serde_json`: MIT License or Apache License 2.0
 - `svg`: MIT License
