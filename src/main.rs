@@ -1,6 +1,7 @@
 mod cli;
 mod qr_generator;
 mod wifi_utils;
+mod update;
 
 use clap::Parser;
 use cli::Args;
@@ -74,7 +75,7 @@ sudo dnf install texlive-scheme-basic texlive-collection-fontsrecommended texliv
     }
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn actual_main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(); // Parse arguments. Version flag is handled by clap.
 
     // Attempt to retrieve known Wi-Fi networks.
@@ -427,4 +428,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+fn main_with_update_check() -> Result<(), Box<dyn std::error::Error>> {
+    let result = actual_main();
+    update::check_for_updates(); // Call update check here, after the main logic
+    result
+}
+
+pub fn main() {
+    if let Err(e) = main_with_update_check() {
+        eprintln!("Application error: {}", e);
+        std::process::exit(1);
+    }
 }

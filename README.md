@@ -93,7 +93,7 @@ irm https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/install.ps1 
 
 The script will download the latest `qrlan-windows-amd64.exe` from GitHub, rename it to `qrlan.exe`, copy it to a user-specificprograms directory (`%LOCALAPPDATA%\Programs\qrlan`), and add this directory to your user's PATH.
 
-**Note on Execution Policy:** If you encounter an error related to script execution being disabled
+__Note on Execution Policy:__ If you encounter an error related to script execution being disabled
 you might need to adjust your PowerShell execution policy. You can allow script execution for the current user by running PowerShellas Administrator and executing:
 
 ```powershell
@@ -102,8 +102,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 *Afterwards run the `irm ... | iex` command from above again.*
 
-**Verify installation:**
-
+__Verify installation:__
 Open a **new** Command Prompt or PowerShell window (this is important for the PATH changes to take effect). You should then be ableto run `qrlan` directly:
 
 ```bash
