@@ -67,14 +67,9 @@ You can install `qrlan` on your system using the provided `install.sh` script. T
 
 **Using Homebrew (Recommended for macOS):**
 
-1. Tap the repository:
-   ```bash
-   brew tap Julian-Bruyers/brew
-   ```
-2. Install qrlan:
-   ```bash
-   brew install qrlan
-   ```
+```bash
+brew tap Julian-Bruyers/brew && brew install qrlan
+```
 
 **Using the installation script (macOS and Linux):**
 

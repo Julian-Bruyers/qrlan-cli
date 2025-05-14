@@ -4,7 +4,7 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[clap(
     author,
-    version = env!("CARGO_PKG_VERSION"), // Use version from Cargo.toml
+    version = concat!(env!("CARGO_PKG_VERSION"), " © Julian Bruyers"), // Use version from Cargo.toml and append copyright
     about,
     long_about = None
 )]
