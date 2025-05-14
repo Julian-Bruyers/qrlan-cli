@@ -65,7 +65,20 @@ Binaries for macOS, Linux, and Windows are created with each release and can be 
 
 You can install `qrlan` on your system using the provided `install.sh` script. This script will download the latest release binary for your operating system and architecture from GitHub and attempt to install it into a common binary location (`/usr/local/bin` by default).
 
-**Download and run the installation script:**
+**Using Homebrew (Recommended for macOS):**
+
+1. Tap the repository:
+   ```bash
+   brew tap Julian-Bruyers/brew
+   ```
+2. Install qrlan:
+   ```bash
+   brew install qrlan
+   ```
+
+**Using the installation script (macOS and Linux):**
+
+Download and run the installation script:
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/julian-bruyers/qrlan-cli/main/scripts/install.sh | sudo bash

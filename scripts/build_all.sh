@@ -69,6 +69,45 @@ echo "Starting QRLAN multi-platform build process..."
 build_target "aarch64-apple-darwin" "macos" "arm64"
 build_target "x86_64-apple-darwin" "macos" "amd64"
 
+# Create macOS Universal Binary and tar.gz archive
+MACOS_ARM64_BIN="$RELEASE_DIR/${EXE_NAME}-macos-arm64"
+MACOS_AMD64_BIN="$RELEASE_DIR/${EXE_NAME}-macos-amd64"
+UNIVERSAL_DIR_NAME="${EXE_NAME}-macos-universal"
+UNIVERSAL_BIN_NAME="$EXE_NAME" # The name of the binary inside the tar.gz
+UNIVERSAL_TAR_NAME="${EXE_NAME}-macos-universal.tar.gz"
+UNIVERSAL_TAR_PATH="$RELEASE_DIR/$UNIVERSAL_TAR_NAME"
+
+if [ -f "$MACOS_ARM64_BIN" ] && [ -f "$MACOS_AMD64_BIN" ]; then
+    echo ""
+    echo "Creating macOS Universal binary..."
+    # Create a temporary directory for the universal binary structure
+    rm -rf "$RELEASE_DIR/$UNIVERSAL_DIR_NAME" # Clean up if it exists
+    mkdir -p "$RELEASE_DIR/$UNIVERSAL_DIR_NAME"
+    
+    UNIVERSAL_OUTPUT_PATH="$RELEASE_DIR/$UNIVERSAL_DIR_NAME/$UNIVERSAL_BIN_NAME"
+    
+    lipo -create -output "$UNIVERSAL_OUTPUT_PATH" "$MACOS_ARM64_BIN" "$MACOS_AMD64_BIN"
+    if [ $? -eq 0 ]; then
+        echo "Successfully created universal binary at $UNIVERSAL_OUTPUT_PATH"
+        echo "Creating tar.gz archive: $UNIVERSAL_TAR_PATH..."
+        # Tar the universal binary. We cd into the directory to control the structure within the tarball.
+        (cd "$RELEASE_DIR/$UNIVERSAL_DIR_NAME" && tar -czf "../$UNIVERSAL_TAR_NAME" "$UNIVERSAL_BIN_NAME")
+        if [ $? -eq 0 ]; then
+            echo "Successfully created $UNIVERSAL_TAR_PATH"
+        else
+            echo "ERROR: Failed to create $UNIVERSAL_TAR_PATH"
+        fi
+        # Clean up the temporary universal directory
+        rm -rf "$RELEASE_DIR/$UNIVERSAL_DIR_NAME"
+    else
+        echo "ERROR: lipo command failed to create universal binary."
+    fi
+else
+    echo "WARNING: One or both macOS binaries not found. Skipping universal binary creation."
+    echo "ARM64 path: $MACOS_ARM64_BIN (exists: $(test -f "$MACOS_ARM64_BIN" && echo true || echo false))"
+    echo "AMD64 path: $MACOS_AMD64_BIN (exists: $(test -f "$MACOS_AMD64_BIN" && echo true || echo false))"
+fi
+
 # Linux Target (GNU)
 # For a more portable Linux binary (static linking), consider using a musl target,
 # e.g., "x86_64-unknown-linux-musl", which might require `musl-tools`.

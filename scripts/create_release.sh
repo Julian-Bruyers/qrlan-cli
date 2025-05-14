@@ -4,6 +4,35 @@ set -e # Exit immediately if a command exits with a non-zero status.
 set -u # Treat unset variables as an error.
 set -o pipefail # Causes a pipeline to return the exit status of the last command in the pipe that returned a non-zero return value.
 
+# --- Determine Paths for Version Check ---
+SCRIPT_DIR_VC=$(cd "$(dirname "$0")" && pwd)
+PROJECT_ROOT_DIR_VC=$(cd "$SCRIPT_DIR_VC/.." && pwd)
+CARGO_TOML_PATH_VC="$PROJECT_ROOT_DIR_VC/Cargo.toml"
+
+# --- Version Check ---
+echo "Checking version in Cargo.toml..."
+if [ ! -f "$CARGO_TOML_PATH_VC" ]; then
+    echo "Error: Cargo.toml not found at $CARGO_TOML_PATH_VC"
+    exit 1
+fi
+CURRENT_VERSION_VC=$(grep '^version *=' "$CARGO_TOML_PATH_VC" | sed 's/version *= *\"\(.*\)\"/\1/')
+if [ -z "$CURRENT_VERSION_VC" ]; then
+    echo "Error: Could not extract current version from '$CARGO_TOML_PATH_VC'."
+    exit 1
+fi
+
+echo "-----------------------------------------------------"
+echo "Current version in Cargo.toml is: v$CURRENT_VERSION_VC"
+echo "-----------------------------------------------------"
+read -p "Have you already incremented the version number in Cargo.toml for this new release? (y/N): " VERSION_CONFIRMATION
+
+if [[ "$VERSION_CONFIRMATION" != "y" && "$VERSION_CONFIRMATION" != "Y" ]]; then
+    echo "Please increment the version in Cargo.toml before creating a release."
+    echo "Aborting release process."
+    exit 1
+fi
+echo "Version confirmed by user."
+
 # --- Configuration ---
 RELEASE_DIR="binaries"
 EXE_NAME="qrlan" # Should match EXE_NAME in build_all.sh
@@ -12,6 +41,7 @@ EXPECTED_BINARIES=(
     "${EXE_NAME}-macos-amd64"
     "${EXE_NAME}-linux-amd64"
     "${EXE_NAME}-windows-amd64.exe"
+    "${EXE_NAME}-macos-universal.tar.gz" # Added universal tarball
 )
 CARGO_TOML_PATH="Cargo.toml"
 
@@ -100,8 +130,20 @@ done
 
 # The gh release create command
 # It will use the current repository context if run from within the repo directory.
-if gh release create "$TAG_NAME" --title "$RELEASE_TITLE" --notes "Automated release including binaries for macOS (ARM64, AMD64), Linux (AMD64), and Windows (AMD64)." "${ASSET_PATHS[@]}"; then
+if gh release create "$TAG_NAME" --title "$RELEASE_TITLE" --notes "Automated release including binaries for macOS (ARM64, AMD64, Universal), Linux (AMD64), and Windows (AMD64)." "${ASSET_PATHS[@]}"; then
     echo "Successfully created GitHub release '$TAG_NAME'."
+
+    # 8. Create Homebrew Release
+    echo ""
+    echo "Attempting to update Homebrew formula via homebrew_release.sh..."
+    if "$(dirname "$0")/homebrew_release.sh"; then
+        echo "Homebrew formula update process completed successfully."
+    else
+        echo "Error: homebrew_release.sh failed. Please check its output for details."
+        # Decide if this should be a fatal error for the main release script
+        # For now, let's print an error and continue, as the main GitHub release was successful.
+        # exit 1 # Uncomment if this should be a fatal error
+    fi
 else
     echo "Error: Failed to create GitHub release. Check 'gh' output for details."
     exit 1
